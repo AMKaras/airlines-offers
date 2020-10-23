@@ -1,28 +1,40 @@
 package com.github.amkaras.airlines.offers.controller;
 
 import com.github.amkaras.airlines.offers.model.FlightDetails;
-import org.springframework.web.bind.annotation.RequestMapping;
+import com.github.amkaras.airlines.offers.service.FlightsPricesService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
-import static java.time.temporal.ChronoUnit.HOURS;
 
 @RestController
 public class FlightPricesController {
 
-    @RequestMapping("/flights")
-    public List<FlightDetails> flights() {
-        List<FlightDetails> details = new ArrayList<>();
-        details.add(new FlightDetails("Cracow", "Rome",
-                ZonedDateTime.now(), ZonedDateTime.now().plus(2, HOURS),
-                BigDecimal.valueOf(100), "USD"));
-        details.add(new FlightDetails("Cracow", "Moscow",
-                ZonedDateTime.now().plus(1, HOURS), ZonedDateTime.now().plus(4, HOURS),
-                BigDecimal.valueOf(150), "USD"));
-        return details;
+    private final FlightsPricesService flightsPricesService;
+
+    public FlightPricesController(FlightsPricesService flightsPricesService) {
+        this.flightsPricesService = flightsPricesService;
+    }
+
+    // from and to dates have to be provided as yyyy-mm-dd
+    @GetMapping("/flights/{origin}/{destination}/{from}/{to}")
+    public List<FlightDetails> flights(@PathVariable String origin, @PathVariable String destination,
+                                       @PathVariable String from, @PathVariable String to) {
+        return flightsPricesService.findFlightsFor(origin, destination,
+                fromIntArray(parseDate(from)), fromIntArray(parseDate(to)));
+    }
+
+    private ZonedDateTime fromIntArray(int[] array) {
+        return ZonedDateTime.of(array[0], array[1], array[2], 0, 0, 0, 0, ZoneId.of("UTC"));
+    }
+
+    private int[] parseDate(String date) {
+        return Arrays.stream(date.split("-"))
+                .mapToInt(Integer::parseInt)
+                .toArray();
     }
 }
