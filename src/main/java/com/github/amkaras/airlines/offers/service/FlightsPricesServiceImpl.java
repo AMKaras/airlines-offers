@@ -24,6 +24,7 @@ public class FlightsPricesServiceImpl implements FlightsPricesService {
     public static final double MAX_DISTANCE_KILOMETERS = 17_000;
     public static final int MAX_FLIGHT_HOURS = 20;
     public static final BigDecimal MAX_PRICE_USD = BigDecimal.valueOf(3_000);
+    public static final String USD = "USD";
 
     private final LocationDao locationDao;
 
@@ -49,12 +50,12 @@ public class FlightsPricesServiceImpl implements FlightsPricesService {
                                                ZonedDateTime from, ZonedDateTime to) {
         double distance = distance(new LatLng(origin.getLatitude(), origin.getLongitude()),
                 new LatLng(destination.getLatitude(), destination.getLongitude()), LengthUnit.KILOMETER);
-        double hoursOfFlight = (distance / MAX_DISTANCE_KILOMETERS) * MAX_FLIGHT_HOURS;
+        int hoursOfFlight = (int) ((distance / MAX_DISTANCE_KILOMETERS) * MAX_FLIGHT_HOURS + 0.9);
         double randomDistanceFactor = (distance / MAX_DISTANCE_KILOMETERS)
                 * ThreadLocalRandom.current().nextDouble(0.5, 1.0)
                 * ThreadLocalRandom.current().nextDouble(0.5, 1.0);
         BigDecimal estimatedPrice = MAX_PRICE_USD.multiply(BigDecimal.valueOf(randomDistanceFactor));
-        return betweenDatesWithEstimatedPrice(estimatedPrice, (int) (hoursOfFlight + 0.9),
+        return betweenDatesWithEstimatedPrice(estimatedPrice, hoursOfFlight,
                 origin.getName(), destination.getName(), from, to);
     }
 
@@ -62,13 +63,12 @@ public class FlightsPricesServiceImpl implements FlightsPricesService {
                                                                String origin, String destination,
                                                                ZonedDateTime from, ZonedDateTime to) {
         List<FlightDetails> flightDetails = new ArrayList<>();
-        while (from.isBefore(to)) {
+        while (from.isBefore(to.plusDays(1))) {
             if (ThreadLocalRandom.current().nextDouble(0.0, 1.0) >= 0.1) {
                 long additionalHours = ThreadLocalRandom.current().nextLong(0, 12);
-                BigDecimal priceRandomFactor = BigDecimal.valueOf(ThreadLocalRandom.current().nextDouble(0.75, 1.0));
                 flightDetails.add(new FlightDetails(origin, destination,
                         from.plusHours(additionalHours), from.plusHours(hoursOfFlight).plusHours(additionalHours),
-                        estimatedPrice.multiply(priceRandomFactor).setScale(2, RoundingMode.HALF_UP), "USD"));
+                        estimatedPrice.setScale(2, RoundingMode.HALF_UP), USD));
             }
             from = from.plusDays(1);
         }
