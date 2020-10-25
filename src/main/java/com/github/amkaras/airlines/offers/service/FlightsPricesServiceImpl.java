@@ -66,9 +66,10 @@ public class FlightsPricesServiceImpl implements FlightsPricesService {
         while (from.isBefore(to.plusDays(1))) {
             if (ThreadLocalRandom.current().nextDouble(0.0, 1.0) >= 0.1) {
                 long additionalHours = ThreadLocalRandom.current().nextLong(0, 12);
+                BigDecimal priceRandomFactor = BigDecimal.valueOf(ThreadLocalRandom.current().nextDouble(0.85, 1.0));
                 flightDetails.add(new FlightDetails(origin, destination,
                         from.plusHours(additionalHours), from.plusHours(hoursOfFlight).plusHours(additionalHours),
-                        estimatedPrice.setScale(2, RoundingMode.HALF_UP), USD));
+                        estimatedPrice.multiply(priceRandomFactor).setScale(2, RoundingMode.HALF_UP), USD));
             }
             from = from.plusDays(1);
         }
